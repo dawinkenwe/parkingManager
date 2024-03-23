@@ -1,0 +1,37 @@
+# Byte-compiled / optimized Python files
+__pycache__/
+*.py[cod]
+
+# Environment directory
+.env/
+
+# Python virtual environment
+venv/
+env/
+
+# IDE specific files
+.idea/
+*.iml
+*.ipynb_checkpoints/
+
+# Logs and temporary files
+*.log
+*.swp
+*.swo
+*.tmp
+
+# Database files
+*.db
+
+# Compiled Python files
+*.pyc
+
+# Compiled C extension
+*.so
+
+# Configuration files
+*.cfg
+*.ini
+
+# Miscellaneous
+.DS_Store
