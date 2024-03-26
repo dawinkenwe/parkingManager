@@ -39,9 +39,10 @@ def get_usage_and_policy_id():
     usage = next(iter(dic.values()))["display"]
 
     policy_id = next(iter(j["issuers"]["items"].values()))["policy"]
-    print(policy_id)
     return {"usage": usage, "policy_id": policy_id}
 
 
 def get_permits():
-    pass
+    auth_data = get_tenant_id_and_bearer_token()
+    params = {"sample": "PT24H", "viewpoint": generate_timestamp_8(), "authorization": f"bearer {auth_data["bearer"]}"}
+    response = requests.get(f"{PERMITS_URL}/{auth_data['tenant_id']}/permits/temporary/usage")
