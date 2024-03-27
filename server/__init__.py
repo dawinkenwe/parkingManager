@@ -1,8 +1,10 @@
+from dotenv import load_dotenv
 from typing import Any
 
 from flask import Flask, render_template, Response
 from flask_caching import Cache
 
+from .helpers.parkingboss_api_helper import get_remaining_usage
 from .models.database import db, init_app
 from .cache import cache
 
@@ -27,7 +29,7 @@ def create_app():
     # Landing Page
     @app.route("/")
     def home():
-        return render_template("home.html", name="World")
+        return render_template("home.html", usage=get_remaining_usage())
 
     # Customize your error pages
     @app.errorhandler(404)
@@ -41,5 +43,7 @@ def create_app():
         response.headers['Pragma'] = 'no-cache'
         response.headers['Expires'] = '0'
         return response
+
+    load_dotenv()
 
     return app

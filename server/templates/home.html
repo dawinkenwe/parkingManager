@@ -1,1 +1,9 @@
-Hello {{name}}!
+{% extends "base.html" %}
+
+{% block title %}Home - Your Website{% endblock %}
+
+{% block content %}
+<h1>Usage</h1>
+
+<p>Hours Remaining: {{ usage }}</p>
+{% endblock %}
