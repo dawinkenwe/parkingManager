@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+import logging
 from typing import Any
 
 from flask import Flask, render_template, Response
@@ -13,6 +14,7 @@ def create_app():
     app = Flask(__name__)
 
     app.config.from_object('config')
+    app.config['DEBUG'] = True
 
     # Initialize the database
     init_app(app)
@@ -25,6 +27,9 @@ def create_app():
     app.register_blueprint(permit_blueprint)
     from .views.person_views import person_blueprint
     app.register_blueprint(person_blueprint)
+
+    # Configure Logging
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
     # Landing Page
     @app.route("/")

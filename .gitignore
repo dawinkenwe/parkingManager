@@ -4,6 +4,7 @@ __pycache__/
 
 # Environment directory
 .env/
+.env
 
 # Python virtual environment
 venv/
