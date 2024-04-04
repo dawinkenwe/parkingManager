@@ -5,7 +5,7 @@ import os
 
 from flask import current_app, jsonify
 
-from server.helpers.error_handler import ExternalAPIError
+from server.helpers.error_handler import ExternalAPIError, ResponseParsingError
 
 # Environment Variables
 LOCATION_ID = os.environ.get('LOCATION_ID')
@@ -42,7 +42,7 @@ def get_tenant_id_and_bearer_token():
         raise ExternalAPIError() from e
     except KeyError as e:
         current_app.logger.exception('Malformatted API response: %s', str(e))
-        raise ExternalAPIError() from e
+        raise ResponseParsingError() from e
 
 
 def get_usage_and_policy_id():
@@ -68,7 +68,7 @@ def get_usage_and_policy_id():
         raise ExternalAPIError() from e
     except KeyError as e:
         current_app.logger.exception('Malformatted API response: %s', str(e))
-        raise ExternalAPIError() from e
+        raise ResponseParsingError() from e
 
 
 def get_remaining_usage():
@@ -79,7 +79,7 @@ def get_remaining_usage():
 
 def get_permits():
     auth_data = get_tenant_id_and_bearer_token()
-    params = {"sample": "PT24H", "viewpoint": generate_utc_timestamp(), "authorization": f"bearer {auth_data['bearer']}"}
+    params = {"sample": "PT24H", "viewpoint": generate_utc_timestamp(), "Authorization": f"bearer {auth_data['bearer']}"}
     full_url = f"{PERMITS_URL}/{auth_data['tenant_id']}/permits/temporary/usage"
     permits = []
     try:
@@ -101,18 +101,18 @@ def get_permits():
         raise ExternalAPIError() from e
     except KeyError as e:
         current_app.logger.exception('Malformatted API response: %s', str(e))
-        raise ExternalAPIError() from e
+        raise ResponseParsingError() from e
 
 
-def create_permit(license_plate, duration, email=None, phone=None):
+def create_permit(license_plate, duration="PT1H", email=None, phone=None):
     policy_id = get_usage_and_policy_id()["policy_id"]
     params = {"viewpoint": generate_timestamp_z(), "location": LOCATION_ID,
-              "policy": policy_id, "vehicle": license_plate, "tenant": "1168-A",
+              "policy": policy_id, "vehicle": license_plate, "tenant": TENANT,
               "token": TENANT_PW, "startDate": "", "duration": "PT1H",
               "email": email, "tel": phone}
     form_data = {"location": LOCATION_ID,
-                 "policy": policy_id, "vehicle": license_plate, "tenant": "1168-A",
-                 "token": TENANT_PW, "startDate": "", "duration": "PT1H",
+                 "policy": policy_id, "vehicle": license_plate, "tenant": TENANT,
+                 "token": TENANT_PW, "startDate": "", "duration": duration,
                  "email": email, "tel": phone}
     permit_id = None
 
@@ -133,7 +133,7 @@ def create_permit(license_plate, duration, email=None, phone=None):
         raise ExternalAPIError() from e
     except KeyError as e:
         current_app.logger.exception('Malformatted API response: %s', str(e))
-        raise ExternalAPIError() from e
+        raise ResponseParsingError() from e
 
 
 def delete_permit(permit_id):
@@ -143,10 +143,11 @@ def delete_permit(permit_id):
     try:
         current_app.logger.info(f'Calling PUT to: {delete_url} with params: {params}')
         response = requests.put(delete_url, params=params)
-        if response.status_code == 200:
-            return True
-    except requests.exceptions.RequestException as e:
-        error_message = str(e)
-        return jsonify({'error': error_message})
+        return {"success": True, "permit_id": permit_id}
+    except requests.RequestException as e:
+        current_app.logger.exception('Error with API request: %s', str(e))
+        raise ExternalAPIError() from e
+    except KeyError as e:
+        current_app.logger.exception('Malformatted API response: %s', str(e))
+        raise ResponseParsingError() from e
 
-    return False
