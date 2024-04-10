@@ -21,10 +21,13 @@
         <a class="nav-link" href="{{ url_for('home') }}">Home <span class="sr-only">(current)</span></a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" href="{{ url_for('permits.get_permits') }}">Permits</a>
+        <a class="nav-link" href="{{ url_for('permits.list_permits') }}">Permits</a>
       </li>
       <li class="nav-item">
         <a class="nav-link" href="{{ url_for('home') }}">People</a>
+      </li>
+        <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('permits.render_create_permit_form') }}">Create Permit</a>
       </li>
     </ul>
   </div>

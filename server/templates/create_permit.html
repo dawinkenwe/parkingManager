@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Your Website{% endblock %}
+
+{% block content %}
+<h1>Permits</h1>
+<form action="{{ url_for('permits.create_permit') }}">
+  <label for="licenseplate">License Plate: </label>
+  <input type="text" id="licenseplate" name="licenseplate"><br>
+  <label for="duration">Duration (hours): </label>
+  <input type="text" id="duration" name="duration"><br>
+</form>
+{% endblock %}

@@ -77,13 +77,14 @@ class TestGetUsageAndPolicyID(unittest.TestCase):
         self.mock_timestamp = "now"
         self.mock_bearer = "bearer_token"
         self.policy_id = "policy_id"
+        self.returned_usage = "123 hours"
         self.usage = "123"
         parkingboss_api_helper.LOCATION_ID = self.location
         parkingboss_api_helper.TENANT = self.tenant
         parkingboss_api_helper.TENANT_PW = self.tenant_pw
         self.mock_auth_data = {"bearer": self.mock_bearer, "tenant_id": self.tenant_id}
         self.mock_response = Mock()
-        self.mock_response.json.return_value = {"usage": {"items": {"item_id": {"used": {"item_id2": {"display": self.usage}}}}}, "issuers": {"items": {"item_id": {"policy": self.policy_id}}}}
+        self.mock_response.json.return_value = {"usage": {"items": {"item_id": {"used": {"item_id2": {"display": self.returned_usage}}}}}, "issuers": {"items": {"item_id": {"policy": self.policy_id}}}}
         self.expected_response = {"usage": self.usage, "policy_id": self.policy_id}
 
         self.app = Flask(__name__)
@@ -152,9 +153,34 @@ class TestGetRemainingUsage(unittest.TestCase):
     def test_decimal_usage(self, mock_usage):
         mock_usage.return_value = {"usage": 79.92, "policy_id": "other_value"}
         parkingboss_api_helper.MONTHLY_USAGE_QUOTA = 100
-        expected_value = Decimal("20.08")
+        expected_value = "20.08"
         value = parkingboss_api_helper.get_remaining_usage()
         self.assertEqual(expected_value, value)
+
+    @patch('server.helpers.parkingboss_api_helper.get_usage_and_policy_id')
+    def test_decimal_usage_usage_not_in_get_usage_and_policy_id_return_value(self, mock_usage):
+        mock_usage.return_value = {"policy_id": "other_value"}
+        parkingboss_api_helper.MONTHLY_USAGE_QUOTA = 100
+        expected_value = "100.00"
+        value = parkingboss_api_helper.get_remaining_usage()
+        self.assertEqual(expected_value, value)
+
+    @patch('server.helpers.parkingboss_api_helper.get_usage_and_policy_id')
+    def test_decimal_usage_usage_is_none_in_get_usage_and_policy_id_return_value(self, mock_usage):
+        mock_usage.return_value = {"usage": None, "policy_id": "other_value"}
+        parkingboss_api_helper.MONTHLY_USAGE_QUOTA = 100
+        expected_value = "100.00"
+        value = parkingboss_api_helper.get_remaining_usage()
+        self.assertEqual(expected_value, value)
+
+    @patch('server.helpers.parkingboss_api_helper.get_usage_and_policy_id')
+    def test_decimal_usage_where_usage_and_policy_id_return_value_is_none(self, mock_usage):
+        mock_usage.return_value = None
+        parkingboss_api_helper.MONTHLY_USAGE_QUOTA = 100
+        expected_value = "100.00"
+        value = parkingboss_api_helper.get_remaining_usage()
+        self.assertEqual(expected_value, value)
+
 
 
 class TestGetPermits(unittest.TestCase):
@@ -189,12 +215,30 @@ class TestGetPermits(unittest.TestCase):
         mock_get.return_value = self.mock_response
 
         expected_params = {"sample": "PT24H", "viewpoint": self.mock_timestamp, "Authorization": f"bearer {self.mock_bearer}"}
-        expected_full_url = f"{parkingboss_api_helper.PERMITS_URL}/{self.tenant_id}/permits/temporary/usage"
+        expected_full_url = f"{parkingboss_api_helper.PERMITS_URL}/{self.tenant_id}/permits"
 
         response = parkingboss_api_helper.get_permits()
         mock_get.assert_called_once_with(expected_full_url, params=expected_params)
 
         self.assertEqual(self.expected_response, response)
+
+    @patch('server.helpers.parkingboss_api_helper.get_tenant_id_and_bearer_token')
+    @patch('server.helpers.parkingboss_api_helper.generate_utc_timestamp')
+    @patch('server.helpers.parkingboss_api_helper.requests.get')
+    @patch('server.helpers.parkingboss_api_helper.current_app')
+    def test_empty_list_flow(self, mock_app, mock_get, mock_timestamp, mock_get_tenant_id):
+        mock_get_tenant_id.return_value = self.mock_auth_data
+        mock_timestamp.return_value = self.mock_timestamp
+        self.mock_response.json.return_value = {"permits": {"items": {}}, "vehicles": {"items": {}}}
+        mock_get.return_value = self.mock_response
+
+        expected_params = {"sample": "PT24H", "viewpoint": self.mock_timestamp, "Authorization": f"bearer {self.mock_bearer}"}
+        expected_full_url = f"{parkingboss_api_helper.PERMITS_URL}/{self.tenant_id}/permits"
+
+        response = parkingboss_api_helper.get_permits()
+        mock_get.assert_called_once_with(expected_full_url, params=expected_params)
+
+        self.assertEqual([], response)
 
     @patch('server.helpers.parkingboss_api_helper.get_tenant_id_and_bearer_token')
     @patch('server.helpers.parkingboss_api_helper.generate_utc_timestamp')

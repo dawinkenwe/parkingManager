@@ -8,19 +8,20 @@
 <table class="table">
   <thead>
     <tr>
-      <th scope="col">Name</th>
+      <th scope="col">License Plate</th>
       <th scope="col">Expiration Time</th>
+      <th scope="col">Permit ID</th>
       <th scope="col">Actions</th>
     </tr>
   </thead>
   <tbody>
     {% for permit in permits %}
     <tr>
-      <td>{{ permit.name }}</td>
-      <td>{{ permit.expiration_time }}</td>
+      <td>{{ permit['license_plate'] }}</td>
+      <td>{{ permit['expiration'] }}</td>
       <td>
-        <button class="btn btn-danger" onclick="deletePermit('{{ permit.id }}')">Delete</button>
-        <button class="btn btn-primary" onclick="refreshPermit('{{ permit.id }}')">Refresh</button>
+        <button class="btn btn-danger" onclick="deletePermit('{{ permit['id'] }}')">Delete</button>
+        <button class="btn btn-primary" onclick="refreshPermit('{{ permit['id'] }}')">Refresh</button>
       </td>
     </tr>
     {% endfor %}

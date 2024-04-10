@@ -1,5 +1,6 @@
 import requests
 import datetime
+from dateutil import tz
 from decimal import Decimal
 import os
 
@@ -13,6 +14,7 @@ TENANT = os.environ.get('TENANT')
 TENANT_PW = os.environ.get('TENANT_PW')
 CANCEL_EMAIL = os.environ.get('CANCEL_EMAIL')
 MONTHLY_USAGE_QUOTA = os.environ.get('MONTHLY_USAGE_QUOTA')
+TIMEZONE = os.environ.get('TIMEZONE')
 
 # API URLS
 TOKEN_URL = 'https://api.parkingboss.com/v1/accounts/auth/tokens'
@@ -27,6 +29,19 @@ def generate_timestamp_z():
 
 def generate_utc_timestamp():
     return datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + '-08:00'
+
+
+def generate_utc_timestamp_range_1_month():
+    my_tz = tz.gettz(TIMEZONE)
+    start = datetime.datetime.now()
+    start = start.replace(tzinfo=my_tz)
+    fmt = "%Y-%m-%dT%H:%M:%S.%f%z"
+    end = start + datetime.timedelta(days=30)
+    start = start.strftime(fmt)
+    end = end.strftime(fmt)
+    start = start[:-8] + '-' + start[-3] + ':' + start[-2:]
+    end = end[:-8] + '-' + end[-3] + ':' + end[-2:]
+    return start + '-' + end
 
 
 def get_tenant_id_and_bearer_token():
@@ -54,7 +69,7 @@ def get_usage_and_policy_id():
         response = requests.get(full_url, params=params, headers={"Content-Type": "application/json"},)
         response.raise_for_status()
         current_app.logger.info(f'Parking API request succeeded')
-        j = response.json()
+        j = response.json()                                                                    
 
         # Get current usage
         dic = next(iter(j["usage"]["items"].values()))["used"]
@@ -62,25 +77,44 @@ def get_usage_and_policy_id():
 
         policy_id = next(iter(j["issuers"]["items"].values()))["policy"]
         current_app.logger.info(f'Returning usage: {usage}, policy_id: {policy_id}')
-        return {"usage": usage, "policy_id": policy_id}
+        return {"usage": usage.split(' ')[0], "policy_id": policy_id}
     except requests.RequestException as e:
         current_app.logger.exception('Error with API request: %s', str(e))
         raise ExternalAPIError() from e
     except KeyError as e:
         current_app.logger.exception('Malformatted API response: %s', str(e))
         raise ResponseParsingError() from e
-
+    except IndexError as e:
+        current_app.logger.exception('Malformatted API response: %s', str(e))
+        raise ResponseParsingError() from e
 
 def get_remaining_usage():
     quota = Decimal(str(MONTHLY_USAGE_QUOTA)).quantize(Decimal('0.01'))
-    usage = Decimal(str(get_usage_and_policy_id()["usage"])).quantize(Decimal('0.01'))
-    return quota - usage
+    usage = 0
+    usage_dict = None
+    try:
+        usage_dict = get_usage_and_policy_id()
+    except ExternalAPIError as e:
+        current_app.logger.exception('Error with API request: %s', str(e))
+    except ResponseParsingError as e:
+        current_app.logger.exception('Malformatted API response: %s', str(e))
+    if usage_dict is not None and 'usage' in usage_dict and usage_dict["usage"] is not None:
+        usage = Decimal(str(usage_dict["usage"])).quantize(Decimal('0.01'))
+    return str(quota - usage)
 
 
+#TODO: Inside here, use the proper timestamps. headers should be viewpoint, valid, and auth.
+# valid is a range like so: 2024-04-08T21:42:12.424-07:00/2024-05-08T21:42:12.424-07:00
+# see time test in idle for a good example
+# Should be fixed now, test in the morning.
 def get_permits():
     auth_data = get_tenant_id_and_bearer_token()
-    params = {"sample": "PT24H", "viewpoint": generate_utc_timestamp(), "Authorization": f"bearer {auth_data['bearer']}"}
-    full_url = f"{PERMITS_URL}/{auth_data['tenant_id']}/permits/temporary/usage"
+    params = {
+        "valid": generate_utc_timestamp_range_1_month(),
+        "viewpoint": generate_utc_timestamp(),
+        "Authorization": f"bearer {auth_data['bearer']}"
+    }
+    full_url = f"{PERMITS_URL}/{auth_data['tenant_id']}/permits"
     permits = []
     try:
         current_app.logger.info(f'Calling GET to: {full_url} with params: {params}')
@@ -88,6 +122,7 @@ def get_permits():
         response.raise_for_status()
 
         response_permits = response.json()
+        current_app.logger.info('Got response: %s', str(response_permits))
         for permit_id, permit_dict in response_permits["permits"]["items"].items():
             vehicle_id = permit_dict["vehicle"]
             license_plate = response_permits["vehicles"]["items"][vehicle_id]["display"]
