@@ -30,14 +30,21 @@
 
 <!-- Add your JavaScript links or scripts here -->
 <script>
+  function confirmDelete(permitId) {
+    // Confirm that the user wants to delete the permit
+    var confirmation = confirm('Are you sure you want to delete this permit?');
+    if (confirmation) {
+      deletePermit(permitId);
+    }
+  }
+
   function deletePermit(permitId) {
     // Send an AJAX request to the Flask endpoint /delete
-    fetch('/delete', {
-      method: 'POST',
+    fetch('/permits/' + permitId, {
+      method: 'DELETE',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ permit_id: permitId })
     })
     .then(response => {
       if (response.ok) {

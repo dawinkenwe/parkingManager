@@ -96,7 +96,7 @@ class TestGetUsageAndPolicyID(unittest.TestCase):
         self.app_context.pop()
 
     @patch('server.helpers.parkingboss_api_helper.get_tenant_id_and_bearer_token')
-    @patch('server.helpers.parkingboss_api_helper.generate_utc_timestamp')
+    @patch('server.helpers.parkingboss_api_helper.generate_timestamp_with_utc_offset')
     @patch('server.helpers.parkingboss_api_helper.requests.get')
     @patch('server.helpers.parkingboss_api_helper.current_app')
     def test_success_flow(self, mock_app, mock_get, mock_timestamp, mock_get_tenant_id):
@@ -109,7 +109,7 @@ class TestGetUsageAndPolicyID(unittest.TestCase):
         self.assertEqual(self.expected_response, response)
 
     @patch('server.helpers.parkingboss_api_helper.get_tenant_id_and_bearer_token')
-    @patch('server.helpers.parkingboss_api_helper.generate_utc_timestamp')
+    @patch('server.helpers.parkingboss_api_helper.generate_timestamp_with_utc_offset')
     @patch('server.helpers.parkingboss_api_helper.requests.get')
     @patch('server.helpers.parkingboss_api_helper.current_app')
     def test_get_tenant_id_exception_flow(self, mock_app, mock_get, mock_timestamp, mock_get_tenant_id):
@@ -121,7 +121,7 @@ class TestGetUsageAndPolicyID(unittest.TestCase):
             response = parkingboss_api_helper.get_usage_and_policy_id()
 
     @patch('server.helpers.parkingboss_api_helper.get_tenant_id_and_bearer_token')
-    @patch('server.helpers.parkingboss_api_helper.generate_utc_timestamp')
+    @patch('server.helpers.parkingboss_api_helper.generate_timestamp_with_utc_offset')
     @patch('server.helpers.parkingboss_api_helper.requests.get')
     @patch('server.helpers.parkingboss_api_helper.current_app')
     def test_requests_exception_flow(self, mock_app, mock_get, mock_timestamp, mock_get_tenant_id):
@@ -133,7 +133,7 @@ class TestGetUsageAndPolicyID(unittest.TestCase):
             response = parkingboss_api_helper.get_usage_and_policy_id()
 
     @patch('server.helpers.parkingboss_api_helper.get_tenant_id_and_bearer_token')
-    @patch('server.helpers.parkingboss_api_helper.generate_utc_timestamp')
+    @patch('server.helpers.parkingboss_api_helper.generate_timestamp_with_utc_offset')
     @patch('server.helpers.parkingboss_api_helper.requests.get')
     @patch('server.helpers.parkingboss_api_helper.current_app')
     def test_key_error_flow(self, mock_app, mock_get, mock_timestamp, mock_get_tenant_id):
@@ -206,7 +206,7 @@ class TestGetPermits(unittest.TestCase):
         self.app_context.push()
 
     @patch('server.helpers.parkingboss_api_helper.get_tenant_id_and_bearer_token')
-    @patch('server.helpers.parkingboss_api_helper.generate_utc_timestamp')
+    @patch('server.helpers.parkingboss_api_helper.generate_timestamp_with_utc_offset')
     @patch('server.helpers.parkingboss_api_helper.requests.get')
     @patch('server.helpers.parkingboss_api_helper.current_app')
     def test_success_flow(self, mock_app, mock_get, mock_timestamp, mock_get_tenant_id):
@@ -223,7 +223,7 @@ class TestGetPermits(unittest.TestCase):
         self.assertEqual(self.expected_response, response)
 
     @patch('server.helpers.parkingboss_api_helper.get_tenant_id_and_bearer_token')
-    @patch('server.helpers.parkingboss_api_helper.generate_utc_timestamp')
+    @patch('server.helpers.parkingboss_api_helper.generate_timestamp_with_utc_offset')
     @patch('server.helpers.parkingboss_api_helper.requests.get')
     @patch('server.helpers.parkingboss_api_helper.current_app')
     def test_empty_list_flow(self, mock_app, mock_get, mock_timestamp, mock_get_tenant_id):
@@ -241,7 +241,7 @@ class TestGetPermits(unittest.TestCase):
         self.assertEqual([], response)
 
     @patch('server.helpers.parkingboss_api_helper.get_tenant_id_and_bearer_token')
-    @patch('server.helpers.parkingboss_api_helper.generate_utc_timestamp')
+    @patch('server.helpers.parkingboss_api_helper.generate_timestamp_with_utc_offset')
     @patch('server.helpers.parkingboss_api_helper.requests.get')
     @patch('server.helpers.parkingboss_api_helper.current_app')
     def test_get_tenant_id_exception_flow(self, mock_app, mock_get, mock_timestamp, mock_get_tenant_id):
@@ -253,7 +253,7 @@ class TestGetPermits(unittest.TestCase):
             response = parkingboss_api_helper.get_permits()
 
     @patch('server.helpers.parkingboss_api_helper.get_tenant_id_and_bearer_token')
-    @patch('server.helpers.parkingboss_api_helper.generate_utc_timestamp')
+    @patch('server.helpers.parkingboss_api_helper.generate_timestamp_with_utc_offset')
     @patch('server.helpers.parkingboss_api_helper.requests.get')
     @patch('server.helpers.parkingboss_api_helper.current_app')
     def test_requests_exception_flow(self, mock_app, mock_get, mock_timestamp, mock_get_tenant_id):
@@ -265,7 +265,7 @@ class TestGetPermits(unittest.TestCase):
             response = parkingboss_api_helper.get_permits()
 
     @patch('server.helpers.parkingboss_api_helper.get_tenant_id_and_bearer_token')
-    @patch('server.helpers.parkingboss_api_helper.generate_utc_timestamp')
+    @patch('server.helpers.parkingboss_api_helper.generate_timestamp_with_utc_offset')
     @patch('server.helpers.parkingboss_api_helper.requests.get')
     @patch('server.helpers.parkingboss_api_helper.current_app')
     def test_key_error_flow(self, mock_app, mock_get, mock_timestamp, mock_get_tenant_id):

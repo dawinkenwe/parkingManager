@@ -4,10 +4,11 @@
 
 {% block content %}
 <h1>Permits</h1>
-<form action="{{ url_for('permits.create_permit') }}">
+<form action="{{ url_for('permits.create_permit') }}" method="POST">
   <label for="licenseplate">License Plate: </label>
   <input type="text" id="licenseplate" name="licenseplate"><br>
   <label for="duration">Duration (hours): </label>
   <input type="text" id="duration" name="duration"><br>
+  <input type="submit" value="Submit">
 </form>
 {% endblock %}

@@ -1,6 +1,6 @@
 from flask import Blueprint, current_app, jsonify, render_template, request
 from server.cache import cache
-from server.helpers.parkingboss_api_helper import get_permits
+from server.helpers import parkingboss_api_helper
 from server.helpers.error_handler import ExternalAPIError, ResponseParsingError
 
 # Create a Blueprint for the person-related views
@@ -18,33 +18,31 @@ def hello_person():
 @cache.cached(timeout=50)
 def list_permits():
     try:
-        return render_template("list_permits.html", permits=get_permits())
+        return render_template("list_permits.html", permits=parkingboss_api_helper.get_permits())
     except (ExternalAPIError, ResponseParsingError) as e:
         return jsonify({'error': e.message}), e.status_code
 
 
-@permit_blueprint.route('', methods=['GET', 'POST'])
+# TODO: CHECK WITH DURATIONS
+@permit_blueprint.route('', methods=['POST'])
 def create_permit():
     try:
-        duration = f"PT{request.form['duration']}H"
-        create_permit(request.form['licenseplate'], duration=duration, email=None, phone=None)
+        duration = f"PT{request.form['duration']}H" if request.form['duration'] and request.form.duration.isnumeric() else None
+        parkingboss_api_helper.create_permit(license_plate=request.form['licenseplate'], duration=duration, email=None, phone=None)
         cache.delete('permit_blueprint/list_permits')
-        return render_template("list_permits.html", permits=get_permits())
+        return render_template("list_permits.html", permits=parkingboss_api_helper.get_permits())
     except (ExternalAPIError, ResponseParsingError) as e:
         return jsonify({'error': e.message}), e.status_code
 
 
-@permit_blueprint.route('/<permit_id>/delete', methods=['DELETE'])
-def delete_permit():
-    if request.method == 'GET':
-        return render_template('create_permit.html')
-    elif request.method == "POST":
-        try:
-            permits = parking_api_permits()
-            cache.delete('permit_blueprint/list_permits')
-            return render_template("list_permits.html", permits=parking_api_permits())
-        except (ExternalAPIError, ResponseParsingError) as e:
-            return jsonify({'error': e.message}), e.status_code
+@permit_blueprint.route('/<permit_id>', methods=['DELETE'])
+def delete_permit(permit_id):
+    try:
+        parkingboss_api_helper.delete_permit(permit_id)
+        cache.delete('permit_blueprint/list_permits')
+        return render_template("list_permits.html", permits=parkingboss_api_helper.get_permits())
+    except (ExternalAPIError, ResponseParsingError) as e:
+        return jsonify({'error': e.message}), e.status_code
 
 
 @permit_blueprint.route('/create', methods=['GET'])

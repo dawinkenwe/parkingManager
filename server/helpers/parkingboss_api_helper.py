@@ -23,25 +23,28 @@ PERMITS_URL = f'https://api.parkingboss.com/v1/locations/{LOCATION_ID}/tenants'
 CREATE_URL = "https://api.parkingboss.com/v1/permits/temporary"
 
 
+# Learning - Z is for Zulu time, which is UTC time.
 def generate_timestamp_z():
     return datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
 
 
-def generate_utc_timestamp():
-    return datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + '-08:00'
+def generate_timestamp_with_utc_offset():
+    timestamp = datetime.datetime.now(tz=tz.gettz(TIMEZONE))
+    timestamp_str = timestamp.strftime("%Y-%m-%dT%H:%M:%S.%f%z")
+    return timestamp_str[:-8] + '-' + timestamp_str[-3] + ':' + timestamp_str[-2:]
+    return datetime.datetime.now(tz=tz.gettz(TIMEZONE)).strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + '-08:00'
 
 
-def generate_utc_timestamp_range_1_month():
+def generate_timestamp_with_utc_offset_range_1_month():
     my_tz = tz.gettz(TIMEZONE)
-    start = datetime.datetime.now()
-    start = start.replace(tzinfo=my_tz)
+    start = datetime.datetime.now(tz=my_tz)
     fmt = "%Y-%m-%dT%H:%M:%S.%f%z"
     end = start + datetime.timedelta(days=30)
     start = start.strftime(fmt)
     end = end.strftime(fmt)
     start = start[:-8] + '-' + start[-3] + ':' + start[-2:]
     end = end[:-8] + '-' + end[-3] + ':' + end[-2:]
-    return start + '-' + end
+    return start + '/' + end
 
 
 def get_tenant_id_and_bearer_token():
@@ -62,7 +65,7 @@ def get_tenant_id_and_bearer_token():
 
 def get_usage_and_policy_id():
     auth_data = get_tenant_id_and_bearer_token()
-    params = {"viewpoint": generate_utc_timestamp(), "Authorization": f"bearer {auth_data['bearer']}", "sample": "PT24H"}
+    params = {"viewpoint": generate_timestamp_with_utc_offset(), "Authorization": f"bearer {auth_data['bearer']}", "sample": "PT24H"}
     full_url = f"{USAGE_URL}/tenants/{auth_data['tenant_id']}/permits/temporary/usage"
     current_app.logger.info(f'Calling GET to: {full_url} with params: {params}')
     try:
@@ -110,8 +113,8 @@ def get_remaining_usage():
 def get_permits():
     auth_data = get_tenant_id_and_bearer_token()
     params = {
-        "valid": generate_utc_timestamp_range_1_month(),
-        "viewpoint": generate_utc_timestamp(),
+        "valid": generate_timestamp_with_utc_offset_range_1_month(),
+        "viewpoint": generate_timestamp_with_utc_offset(),
         "Authorization": f"bearer {auth_data['bearer']}"
     }
     full_url = f"{PERMITS_URL}/{auth_data['tenant_id']}/permits"
@@ -178,6 +181,7 @@ def delete_permit(permit_id):
     try:
         current_app.logger.info(f'Calling PUT to: {delete_url} with params: {params}')
         response = requests.put(delete_url, params=params)
+        response.raise_for_status()
         return {"success": True, "permit_id": permit_id}
     except requests.RequestException as e:
         current_app.logger.exception('Error with API request: %s', str(e))
