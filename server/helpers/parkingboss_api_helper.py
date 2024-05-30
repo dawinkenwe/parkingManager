@@ -106,10 +106,8 @@ def get_remaining_usage():
     return str(quota - usage)
 
 
-#TODO: Inside here, use the proper timestamps. headers should be viewpoint, valid, and auth.
-# valid is a range like so: 2024-04-08T21:42:12.424-07:00/2024-05-08T21:42:12.424-07:00
-# see time test in idle for a good example
-# Should be fixed now, test in the morning.
+# TODO: CHECK HERE TO SEE IF EXPIRED PERMITS SHOW
+# THIS COULD BE CAUSING THE ISSUE WITH THE DELETED PERMITS STILL SHOWING FOR A LITTLE.
 def get_permits():
     auth_data = get_tenant_id_and_bearer_token()
     params = {
@@ -176,7 +174,7 @@ def create_permit(license_plate, duration="PT1H", email=None, phone=None):
 
 def delete_permit(permit_id):
     delete_url = "https://api.parkingboss.com/v1/permits/" + permit_id + "/expires"
-    params = {"viewpoint": generate_timestamp_z(), "permit": permit_id, "to": CANCEL_EMAIL}
+    params = {"viewpoint": generate_timestamp_z(), "permit": permit_id, "to": CANCEL_EMAIL, "_method": "PUT"}
 
     try:
         current_app.logger.info(f'Calling PUT to: {delete_url} with params: {params}')

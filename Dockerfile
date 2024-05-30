@@ -4,4 +4,4 @@ ADD ./ /
 RUN pip3 install --upgrade pip
 RUN pip3 install pipenv
 RUN pipenv install --system --deploy
-CMD [ "python", "./manage.py", "start", "0.0.0.0:8080"]
+CMD [ "python", "./manage.py", "run", "0.0.0.0:5000"]

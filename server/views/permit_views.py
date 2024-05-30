@@ -13,7 +13,6 @@ def hello_person():
     return 'Hello, World! This is the permits view.'
 
 
-# TODO: This was returning a LOT of permits for some reason. Maybe including expired? Investigate on PB api level
 @permit_blueprint.route('', methods=['GET'])
 @cache.cached(timeout=50)
 def list_permits():
@@ -27,19 +26,27 @@ def list_permits():
 @permit_blueprint.route('', methods=['POST'])
 def create_permit():
     try:
-        duration = f"PT{request.form['duration']}H" if request.form['duration'] and request.form.duration.isnumeric() else None
-        parkingboss_api_helper.create_permit(license_plate=request.form['licenseplate'], duration=duration, email=None, phone=None)
-        cache.delete('permit_blueprint/list_permits')
+        form = request.form.to_dict()
+        print(form)
+        duration = f"PT{form['duration']}H" if form['duration'] and form['duration'].isnumeric() else None
+        print(duration)
+        parkingboss_api_helper.create_permit(license_plate=form['licenseplate'], duration=duration, email=None, phone=None)
+        cache.delete('permits/list_permits')
         return render_template("list_permits.html", permits=parkingboss_api_helper.get_permits())
     except (ExternalAPIError, ResponseParsingError) as e:
         return jsonify({'error': e.message}), e.status_code
 
 
+# TODO: Fix the page still showing deleted permit for a little bit
+# Might be a caching issue, might be better to return a non refresh
+# code and have the javascript manually remove the permit from the
+# list anyways after clicking the button and receiving the success?
 @permit_blueprint.route('/<permit_id>', methods=['DELETE'])
 def delete_permit(permit_id):
     try:
         parkingboss_api_helper.delete_permit(permit_id)
-        cache.delete('permit_blueprint/list_permits')
+        cache.delete('permits/list_permits')
+        return jsonify({'permit_id': permit_id}), 200
         return render_template("list_permits.html", permits=parkingboss_api_helper.get_permits())
     except (ExternalAPIError, ResponseParsingError) as e:
         return jsonify({'error': e.message}), e.status_code

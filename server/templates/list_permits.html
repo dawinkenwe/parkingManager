@@ -16,11 +16,11 @@
   </thead>
   <tbody>
     {% for permit in permits %}
-    <tr>
+    <tr id="'{{ permit['id'] }}'">
       <td>{{ permit['license_plate'] }}</td>
       <td>{{ permit['expiration'] }}</td>
       <td>
-        <button class="btn btn-danger" onclick="deletePermit('{{ permit['id'] }}')">Delete</button>
+        <button class="btn btn-danger" onclick="confirmDelete('{{ permit['id'] }}')">Delete</button>
         <button class="btn btn-primary" onclick="refreshPermit('{{ permit['id'] }}')">Refresh</button>
       </td>
     </tr>
@@ -49,6 +49,9 @@
     .then(response => {
       if (response.ok) {
         // Handle successful deletion (if needed)
+        var elem = document.getElementById(permitId);
+        elem.remove()
+
         console.log('Permit deleted successfully');
       } else {
         // Handle deletion failure (if needed)
